@@ -1,6 +1,7 @@
 # Connect to DSN, returns Connection object,
 # also stores Connection information in global default
 # 'conn' object and global 'Connections' connections array
+import Base: connect
 function connect(dsn::AbstractString; usr::AbstractString="", pwd::AbstractString="")
     global Connections, conn, env
     env == C_NULL && (env = ODBCAllocHandle(SQL_HANDLE_ENV, SQL_NULL_HANDLE))

@@ -94,5 +94,6 @@ global ret = ""
 
 include("backend.jl")
 include("userfacing.jl")
+include("dbapi.jl")
 
 end #ODBC module
