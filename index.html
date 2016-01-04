@@ -1,0 +1,241 @@
+<!doctype html>
+<html>
+  <head>
+    <meta charset="utf-8">
+    <meta http-equiv="X-UA-Compatible" content="chrome=1">
+    <title>ODBC.jl by nkottary</title>
+
+    <link rel="stylesheet" href="stylesheets/styles.css">
+    <link rel="stylesheet" href="stylesheets/github-light.css">
+    <meta name="viewport" content="width=device-width">
+    <!--[if lt IE 9]>
+    <script src="//html5shiv.googlecode.com/svn/trunk/html5.js"></script>
+    <![endif]-->
+  </head>
+  <body>
+    <div class="wrapper">
+      <header>
+        <h1>ODBC.jl</h1>
+        <p>A low-level ODBC interface for the Julia programming language</p>
+
+        <p class="view"><a href="https://github.com/nkottary/ODBC.jl">View the Project on GitHub <small>nkottary/ODBC.jl</small></a></p>
+
+
+        <ul>
+          <li><a href="https://github.com/nkottary/ODBC.jl/zipball/master">Download <strong>ZIP File</strong></a></li>
+          <li><a href="https://github.com/nkottary/ODBC.jl/tarball/master">Download <strong>TAR Ball</strong></a></li>
+          <li><a href="https://github.com/nkottary/ODBC.jl">View On <strong>GitHub</strong></a></li>
+        </ul>
+      </header>
+      <section>
+        <h1>
+<a id="odbcjl" class="anchor" href="#odbcjl" aria-hidden="true"><span class="octicon octicon-link"></span></a>ODBC.jl</h1>
+
+<p><a href="https://travis-ci.org/JuliaDB/ODBC.jl"><img src="https://travis-ci.org/JuliaDB/ODBC.jl.png" alt="Build Status"></a></p>
+
+<p>A low-level ODBC interface for the Julia programming language</p>
+
+<p>Installation through the Julia package manager:</p>
+
+<div class="highlight highlight-source-julia"><pre>julia<span class="pl-k">&gt;</span> Pkg<span class="pl-k">.</span><span class="pl-c1">init</span>()        <span class="pl-c"># Creates julia package repository (only runs once for all packages)</span>
+julia<span class="pl-k">&gt;</span> Pkg<span class="pl-k">.</span><span class="pl-c1">add</span>(<span class="pl-s"><span class="pl-pds">"</span>ODBC<span class="pl-pds">"</span></span>)   <span class="pl-c"># Creates the ODBC repo folder and downloads the ODBC package + dependancy (if needed)</span>
+julia<span class="pl-k">&gt;</span> <span class="pl-k">using</span> ODBC        <span class="pl-c"># Loads the ODBC module for use (needs to be run with each new Julia instance)</span></pre></div>
+
+<h2>
+<a id="package-documentation" class="anchor" href="#package-documentation" aria-hidden="true"><span class="octicon octicon-link"></span></a>Package Documentation</h2>
+
+<p>Exported functions, macros, types, and variables include:</p>
+
+<h4>
+<a id="functions" class="anchor" href="#functions" aria-hidden="true"><span class="octicon octicon-link"></span></a>Functions</h4>
+
+<ul>
+<li>
+<p><code>ODBC.connect(dsn; usr="", pwd="")</code></p>
+
+<p><code>ODBC.connect</code> requires the <code>dsn</code> string argument as the name of a pre-defined ODBC
+datasource.  Valid datasources (DSNs) must first be setup through the ODBC
+administrator (or IODBC, unixODBC, etc.) prior to connecting in Julia. Note the use of <code>ODBC.</code> before <code>connect</code>, this is to prevent method ambiguity with the <code>Base.connect</code> family of methods.</p>
+
+<p>The <code>usr</code> and <code>pwd</code> named arguments are optional as they may already
+be defined in the datasource.</p>
+
+<p><code>ODBC.connect</code> returns a <code>Connection</code> type which contains basic information
+about the connection and ODBC handle pointers.</p>
+
+<p><code>ODBC.connect</code> can be used by storing the <code>Connection</code> type in
+a variable to be able to disconnect or facilitate handling multiple
+connections like so:</p>
+
+<div class="highlight highlight-source-julia"><pre>co <span class="pl-k">=</span> ODBC<span class="pl-k">.</span><span class="pl-c1">connect</span>(<span class="pl-s"><span class="pl-pds">"</span>mydatasource<span class="pl-pds">"</span></span>,usr<span class="pl-k">=</span><span class="pl-s"><span class="pl-pds">"</span>johndoe<span class="pl-pds">"</span></span>,pwd<span class="pl-k">=</span><span class="pl-s"><span class="pl-pds">"</span>12345<span class="pl-pds">"</span></span>)</pre></div>
+
+<p>But it's unneccesary to store the <code>Connection</code>, as an exported
+<code>conn</code> variable holds the most recently created <code>Connection</code> type and other
+ODBC functions (i.e. <code>query</code>) will use it by default in the absence of a specified
+connection.</p>
+</li>
+<li>
+<p><code>disconnect(connection::Connection=conn)</code></p>
+
+<p><code>disconnect</code> closes a connection type, frees all handles and resets
+the default connection <code>conn</code> as necessary. If invoked with no arguments
+(i.e. <code>disconnect()</code>), the default connection <code>conn</code> is closed.</p>
+</li>
+<li>
+<p><code>advancedconnect(conn_string::String)</code></p>
+
+<p><code>advancedconnect</code> implements the native ODBC SQLDriverConnect function
+which allows flexibility in connecting to a datasource through specifying
+a 'connection string' (e.g. "DSN=userdsn;UID=johnjacob;PWD=jingle;") See
+ODBC API documentation (<a href="http://goo.gl/uXTuk">http://goo.gl/uXTuk</a>) for additional details.</p>
+
+<p>If the connection string doesn't contain enough information for the driver
+to connect, the user will be prompted with the additional information
+needed.</p>
+
+<p>Furthermore, on Windows, if <code>advancedconnect()</code> is called without arguments the ODBC
+administrator will be brought up where the user can select the DSN to
+which to connect, even allowing the user to create a datasource or add a
+driver.</p>
+
+<p>(An excellent resource for learning how to construct connection strings
+for various DBMS/driver configurations is
+<a href="http://www.connectionstrings.com/">http://www.connectionstrings.com/</a>)</p>
+</li>
+<li>
+<p><code>query(connection::Connection=conn, querystring; file=:DataFrame,delim='\t')</code></p>
+
+<p>If a connection type isn't specified as the first positional argument, the query will be executed against
+the default connection (stored in the exported variable <code>conn</code> if you'd like to
+inspect).</p>
+
+<p>Once the query is executed, the resultset is stored in a
+<code>DataFrame</code> by default (<code>file=:DataFrame</code>). Otherwise, the user may specify
+a file name to which the resultset is to be written, along with the desired
+file delimiter (default <code>delim='\t'</code>). Depending on DBMS capability, users may also
+pass multiple query statements in a single query call and the resultsets
+will be returned in an array of DataFrames, or the user may specify an array
+of filename strings and <code>Char</code> delimiters into which the results will be written. </p>
+
+<p>For the general user, a simple <code>query(querystring)</code> is enough to return a single
+resultset in a DataFrame. Results are stored in the passed connection type's resultset field.
+(i.e. <code>conn.resultset</code>). Results are stored by default to avoid immediate garbarge collection
+and provide access for the user even if the resultset returned by <code>query()</code> isn't stored in a variable.</p>
+</li>
+<li>
+<p><code>querymeta(conn::Connection=conn, querystring; file=:DataFrame,delim='\t')</code></p>
+
+<p><code>querymeta</code> is really just the 1st half of the <code>query</code> function. A query string is sent to the DBMS, executed,
+and metadata (i.e. rows, columns, types, column names, etc.) is returned to the user, avoiding actually returning
+the dataset. The returned information is actually stored in the <code>Metadata</code> type, so the information may be
+programmatically examined (try running <code>names(Metadata)</code> to see its fields). Running <code>querymeta</code> is useful 
+for inspecting the results of large queries while avoiding the overhead of returning the actual dataset into memory.
+The function signature is identical to <code>query</code> for ease in switching between the two though <code>querymeta</code> ignores
+the <code>file</code> and <code>delim</code> arguments.</p>
+</li>
+<li>
+<p><code>listdrivers()</code></p>
+
+<p>Takes no arguments. Returns a list of installed ODBC drivers registered in the ODBC administator (IODBC, unixODBC, etc.).</p>
+</li>
+<li>
+<p><code>listdsns()</code></p>
+
+<p>Takes no arguments. Returns a list of defined datasources (DSNs) registered in the ODBC administator 
+(IODBC, unixODBC, etc.). The datasource names can be used as the 1st argument in <code>ODBC.connect(dsn)</code>.</p>
+
+<h4>
+<a id="macros" class="anchor" href="#macros" aria-hidden="true"><span class="octicon octicon-link"></span></a>Macros</h4>
+</li>
+<li>
+<p><code>sql"..."</code></p>
+
+<p><code>sql"..."</code> is a Julia string literal implemented by the <code>@sql_str</code> macro. It is equivalent to calling 
+<code>query(querystring)</code> as you can see from the actual definition below:</p>
+
+<div class="highlight highlight-source-julia"><pre><span class="pl-k">macro</span> <span class="pl-en">sql_str</span>(s)
+  <span class="pl-c1">query</span>(s)
+<span class="pl-k">end</span></pre></div>
+
+<h4>
+<a id="types" class="anchor" href="#types" aria-hidden="true"><span class="octicon octicon-link"></span></a>Types</h4>
+</li>
+<li>
+<p><code>Connection</code></p>
+
+<p>Stores information about a DSN connection. Names include <code>dsn</code>, <code>number</code> (counts <code>Connection</code> types specific
+to each DSN), <code>dbc_ptr</code> and <code>stmt_ptr</code> as internal connection and statement handle pointers, and <code>resultset</code> which
+stores the last resultset returned from a <code>query</code> or <code>querymeta</code> call. </p>
+</li>
+<li>
+<p><code>Metadata</code>
+Stores information about an executed query, returned by <code>querymeta</code>. Names include <code>querystring</code> (the query sent to
+be executed), <code>cols</code> (# of columns in resultset), <code>rows</code> (# of rows in resultset), <code>colnames</code> (column names to be 
+returned in resultset), <code>coltypes</code> (SQL types of resultset columns), <code>colsizes</code> (size in bytes of resultset columns),
+<code>coldigits</code> (max number of digits for numeric resultset columns; though not always implemented correctly by ODBC driver),
+and <code>colnulls</code> (whether the resultset column is nullable).</p>
+
+<h4>
+<a id="variables" class="anchor" href="#variables" aria-hidden="true"><span class="octicon octicon-link"></span></a>Variables</h4>
+</li>
+<li>
+<code>conn</code>
+Global, exported variable that initially holds a null <code>Connection</code> type until a connection is successfully made by
+<code>ODBC.connect</code> or <code>advancedconnect</code>. Is used by <code>query</code> and <code>querymeta</code> as the default datasource <code>Connection</code> if none is
+explicitly specified. </li>
+<li>
+<code>Connections</code>
+Global, exported variable of type <code>Array{Connection,1}</code>, that holds <code>Connection</code> types. When multiple calls to <code>ODBC.connect</code>
+or <code>advancedconnect</code> are made, <code>Connections</code> stores each <code>Connection</code> type to manage the number of DSN connections. 
+It is also referenced when the default connection <code>conn</code> is disconnected and reset to <code>Connections[end]</code> if other 
+connections exist, or a null <code>Connection</code> type otherwise.</li>
+</ul>
+
+<h3>
+<a id="known-issues" class="anchor" href="#known-issues" aria-hidden="true"><span class="octicon octicon-link"></span></a>Known Issues</h3>
+
+<ul>
+<li>
+<p>We've had limited ODBC testing between various platforms, so it may happen that <code>ODBC.jl</code> doesn't recognize your
+ODBC shared library (also know as the Driver Manager, basically the middleman between <code>ODBC.jl</code> and the RDBMS).
+The current approach is to check a variety of the most widely used ODBC libraries and produce an error if not found.
+If this happens, you'll need to manually locate your ODBC shared library (searching for something along the lines of
+<code>libodbc</code> or <code>libiodbc</code>, or installing it if you haven't yet) and then run the following:</p>
+
+<div class="highlight highlight-source-julia"><pre><span class="pl-k">const</span> odbc_dm <span class="pl-k">=</span> <span class="pl-s"><span class="pl-pds">"</span>path/to/library/libodbc.so<span class="pl-pds">"</span></span> (or <span class="pl-k">.</span>dylib on OSX)</pre></div>
+
+<p>*Note that the file is <code>odbc32</code> on Windows, but should never have a problem being found (ships by default).
+That said, if you end up doing this, open an issue on GitHub to let me know what the name of your ODBC library is
+and I can add is as one of the defaults to check for.</p>
+</li>
+</ul>
+
+<h3>
+<a id="todo" class="anchor" href="#todo" aria-hidden="true"><span class="octicon octicon-link"></span></a>TODO</h3>
+
+<ul>
+<li>Create SQL typealiases and use in conjunction with Julia-C typealiases for ODBC_API (for more transparency and because we can)</li>
+<li>Metadata tools: This would involve specilized queries for examining DBMS schema, tables, views, columns, with 
+associated metadata and possibly statistics. I know the driver managers support SQLTables and SQLStatistics, 
+so it should be pretty simple to implement these.</li>
+<li>Create, Update Table functions (also auto-detect regular queries as these kinds of DDL queries): Pretty self-explanatory.</li>
+<li>Support more SQL data types: Date, Time, Intervals. Right now, all main bitstypes, character and binary formats
+(short, long, float, double, char, etc.) are supported, but the date and time data types are read as strings. 
+Other implementations in C use structs to read them in and Julia is still fragile on struct support as far as I know.
+As Julia struct compatibility improves it's an eventual (I think RODBC package still only reads dates as strings...)</li>
+<li>Asynchronous querying: This might be a longshot, but the later ODBC API supports async querying through polling, 
+so it would be cool to find a way to implement this. I'm not sure how useful it would be long term or exactly how it
+would be implemented (Call asyncquery() and then later call querydone() to see if it's finished?), but because the
+underlying api is capable this could be some cool functionality.</li>
+<li>How to deal with Unicode/ANSI function calling? (I think we're ok here, but not sure)</li>
+</ul>
+      </section>
+      <footer>
+        <p>This project is maintained by <a href="https://github.com/nkottary">nkottary</a></p>
+        <p><small>Hosted on GitHub Pages &mdash; Theme by <a href="https://github.com/orderedlist">orderedlist</a></small></p>
+      </footer>
+    </div>
+    <script src="javascripts/scale.fix.js"></script>
+    
+  </body>
+</html>
